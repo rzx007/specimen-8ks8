@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Specimen 8KS8 — a random string, read carefully</title>
+<meta name="description" content="Sixty-four random glyphs dissected into a grid, an arithmetic, a typeface and a palette. Built with GSAP ScrollTrigger and Lenis.">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0D0F11">
+<meta property="og:title" content="Specimen 8KS8 — a random string, read carefully">
+<meta property="og:description" content="64 glyphs → 8×8 → digit sum 45 → hue 45°. A personal page where every decision is traceable to a glyph's position.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap">
+
+<!-- Fonts, GSAP and Lenis are the only network requests. No analytics. -->
+<script>
+/* Establish the pre-animation state before first paint so nothing flashes, and so
+   masked/split text is already hidden when the fonts land. The main script removes
+   this class again if motion is reduced or GSAP never arrived. */
+(function () {
+  try {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("anim");
+    }
+  } catch (e) {}
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+
+<style>
+/* ============================================================
+   TOKENS
+   Base unit 8px (64 = 8²).  --amber-* is hsl(45 ...) because the
+   token's nine digits sum to 45 = T9.  --cold is its complement 225.
+   ============================================================ */
+:root{
+  --u: 8px;
+  --bg:      #0D0F11;
+  --bg-2:    #121417;
+  --bg-3:    #191C20;
+  --fg:      #EFEBE3;
+  --fg-dim:  rgba(239,235,227,.62);
+  --fg-mute: rgba(239,235,227,.34);
+  --line:    rgba(239,235,227,.10);
+  --line-2:  rgba(239,235,227,.20);
+  --amber:    #DFB63A;
+  --amber-hi: #F5D166;
+  --amber-lo: #8B6E18;
+  --amber-ink:#0D0F11;
+  --cold:     #999CA3;
+  --cold-2:   #C7CAD0;
+  --r-1: 2px;
+  --r-2: 4px;
+  --maxw: 1440px;
+  --pad: clamp(20px, 5.2vw, 84px);
+  --gap: clamp(16px, 2vw, 32px);
+  --sec-y: clamp(88px, 12.5vh, 176px);
+  --serif: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --ease: cubic-bezier(.22,1,.36,1);
+}
+
+/* Paper ground — section 03 only: a reading room against the graphite. */
+.paper{
+  --bg:      #EDE8DE;
+  --bg-2:    #E3DDD0;
+  --bg-3:    #DCD5C6;
+  --fg:      #14161A;
+  --fg-dim:  rgba(20,22,26,.68);
+  --fg-mute: rgba(20,22,26,.40);
+  --line:    rgba(20,22,26,.14);
+  --line-2:  rgba(20,22,26,.26);
+  --amber:    #8B6E18;
+  --amber-hi: #A8861E;
+  --amber-lo: #6F5712;
+  --amber-ink:#EDE8DE;
+  --cold:     #5F6470;
+  --cold-2:   #3D4249;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+/* Lenis */
+html.lenis,html.lenis body{ height:auto; }
+.lenis.lenis-smooth{ scroll-behavior:auto !important; }
+.lenis.lenis-stopped{ overflow:hidden; }
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:var(--serif);
+  font-optical-sizing:auto;
+  font-weight:400;
+  font-size:clamp(1rem,1.02vw,1.0625rem);
+  line-height:1.6;
+  letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+
+img,svg{ display:block; max-width:100%; }
+a{ color:inherit; text-decoration:none; }
+button{ font:inherit; color:inherit; background:none; border:0; margin:0; padding:0; cursor:pointer; }
+p{ margin:0 0 1.1em; text-wrap:pretty; }
+p:last-child{ margin-bottom:0; }
+strong{ font-weight:600; }
+::selection{ background:var(--amber); color:var(--amber-ink); }
+
+:focus{ outline:none; }
+:focus-visible{
+  outline:2px solid var(--amber);
+  outline-offset:3px;
+  border-radius:var(--r-1);
+}
+
+.mono{
+  font-family:var(--mono);
+  font-size:.6875rem;
+  line-height:1.45;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  font-weight:400;
+}
+.mono--lo{ color:var(--fg-mute); }
+.mono--am{ color:var(--amber); }
+.mono--co{ color:var(--cold); }
+.tnum{ font-variant-numeric:tabular-nums; font-feature-settings:"tnum" 1; }
+
+.wrap{
+  width:100%;
+  max-width:var(--maxw);
+  margin-inline:auto;
+  padding-inline:var(--pad);
+}
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+.skip{
+  position:fixed; top:10px; left:10px; z-index:200;
+  transform:translateY(-160%);
+  background:var(--amber); color:var(--amber-ink);
+  padding:10px 14px; border-radius:var(--r-1);
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.13em; text-transform:uppercase;
+  transition:transform .25s var(--ease);
+}
+.skip:focus{ transform:translateY(0); }
+
+/* ============================================================
+   TEXTURE + CURSOR
+   ============================================================ */
+.grain{
+  position:fixed; inset:0; z-index:90; pointer-events:none;
+  opacity:.035; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.aura{
+  position:fixed; z-index:1; top:0; left:0;
+  width:520px; height:520px; margin:-260px 0 0 -260px;
+  border-radius:50%; pointer-events:none; opacity:0;
+  background:radial-gradient(circle, rgba(223,182,58,.16) 0%, rgba(223,182,58,0) 62%);
+  will-change:transform;
+  transition:opacity .4s var(--ease);
+}
+.aura.on{ opacity:1; }
+
+/* ============================================================
+   HUD
+   ============================================================ */
+.hud{
+  position:fixed; top:0; left:0; right:0; z-index:100;
+  background:rgba(13,15,17,.72);
+  -webkit-backdrop-filter:blur(14px) saturate(1.2);
+  backdrop-filter:blur(14px) saturate(1.2);
+  border-bottom:1px solid var(--line);
+}
+.hud__bar{
+  display:flex; align-items:center; justify-content:space-between; gap:var(--gap);
+  max-width:var(--maxw); margin-inline:auto;
+  padding:0 var(--pad);
+  height:56px;
+}
+.brand{ display:flex; align-items:baseline; gap:10px; }
+.brand b{
+  font-family:var(--mono); font-weight:700; font-size:.8125rem;
+  letter-spacing:.16em;
+}
+.brand i{
+  font-family:var(--mono); font-style:normal; font-size:.625rem;
+  letter-spacing:.18em; color:var(--fg-mute);
+}
+.hud__nav{ display:flex; gap:clamp(14px,2.2vw,34px); }
+.hud__nav a{
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--fg-dim); position:relative; padding-block:4px;
+  transition:color .3s var(--ease);
+}
+.hud__nav a::after{
+  content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
+  background:var(--amber); transform:scaleX(0); transform-origin:left;
+  transition:transform .4s var(--ease);
+}
+.hud__nav a:hover{ color:var(--fg); }
+.hud__nav a:hover::after{ transform:scaleX(1); }
+.hud__nav a[aria-current="true"]{ color:var(--amber); }
+.hud__nav a[aria-current="true"]::after{ transform:scaleX(1); }
+.hud__here{
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--fg-dim); white-space:nowrap;
+  display:inline-block;
+}
+.hud__rail{ position:relative; height:6px; max-width:var(--maxw); margin-inline:auto; }
+.rail__ticks,.rail__fill{
+  position:absolute; left:0; right:0; bottom:0; height:6px;
+  background-repeat:no-repeat;
+}
+.rail__ticks{
+  background-image:repeating-linear-gradient(90deg, var(--line-2) 0 1px, transparent 1px calc(100% / 64));
+  background-size:100% 6px;
+}
+.rail__fill{
+  background-image:repeating-linear-gradient(90deg, var(--amber) 0 1px, transparent 1px calc(100% / 64));
+  background-size:100% 6px;
+  clip-path:inset(0 100% 0 0);
+}
+.rail__read{
+  position:absolute; bottom:12px; left:0; transform:translateX(-50%);
+  display:flex; align-items:baseline; gap:6px;
+  background:var(--amber); color:var(--amber-ink);
+  padding:3px 7px; border-radius:var(--r-1);
+  font-family:var(--mono); font-size:.625rem; letter-spacing:.08em;
+  opacity:0; pointer-events:none; transition:opacity .2s var(--ease);
+  white-space:nowrap;
+}
+.rail__read.on{ opacity:1; }
+.rail__read b{ font-size:.75rem; font-weight:700; }
+.rail__read i{ font-style:normal; opacity:.62; }
+
+/* ============================================================
+   SECTION SHELL
+   ============================================================ */
+.sec{
+  position:relative;
+  background:var(--bg);
+  padding-block:var(--sec-y);
+  border-top:1px solid var(--line);
+}
+.paper.sec{ border-top-color:rgba(20,22,26,.16); }
+.sec__head{
+  display:grid;
+  grid-template-columns:5.5rem minmax(0,1fr) minmax(0,30ch);
+  gap:var(--gap);
+  align-items:start;
+  margin-bottom:clamp(44px,7vh,88px);
+}
+.sec__idx{
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.14em;
+  color:var(--fg-mute); padding-top:.55em;
+}
+.h2{
+  font-family:var(--serif);
+  font-weight:340;
+  font-size:clamp(2.1rem,5.4vw,4.75rem);
+  line-height:.97;
+  letter-spacing:-.024em;
+  margin:0;
+  text-wrap:balance;
+}
+.sec__note{
+  font-family:var(--mono); font-size:.75rem; line-height:1.72;
+  letter-spacing:.015em; color:var(--fg-dim); margin:0;
+  padding-top:.5em; text-transform:none;
+}
+.lede{
+  font-size:clamp(1.0625rem,1.42vw,1.3125rem);
+  line-height:1.52;
+  letter-spacing:-.012em;
+  color:var(--fg);
+  max-width:34ch;
+}
+.body-copy{ color:var(--fg-dim); max-width:62ch; }
+.rule{ height:1px; background:var(--line-2); transform-origin:left; }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{
+  position:relative;
+  min-height:100vh;
+  min-height:100svh;
+  padding-top:56px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  overflow:hidden;
+  border-top:0;
+}
+.hero__grid-lines{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  max-width:var(--maxw); margin-inline:auto; left:0; right:0;
+  display:grid; grid-template-columns:repeat(8,1fr);
+  padding-inline:var(--pad);
+}
+.hero__grid-lines span{ border-left:1px solid var(--line); }
+.hero__grid-lines span:first-child{ border-left-color:transparent; }
+.ghost{
+  position:absolute; z-index:0; pointer-events:none;
+  right:calc(var(--pad) * -.4);
+  top:0; bottom:0;
+  width:min(50vw,620px);
+  display:grid; grid-template-columns:repeat(8,1fr);
+  align-content:center;
+  font-family:var(--mono); font-weight:700;
+  font-size:min(6.25vw,4.84rem); line-height:1;
+  color:var(--fg);
+  --ghost-o:.13;
+  opacity:var(--ghost-o);
+  /* mask-size/-repeat are load-bearing: with the defaults (auto/repeat) the
+     gradient image is anchored top-left at 128% of the box, which pushes its
+     centre outside the element and the fade never lands on the glyphs. */
+  -webkit-mask-image:radial-gradient(132% 122% at 100% 4%, #000 30%, rgba(0,0,0,.5) 66%, transparent 98%);
+  -webkit-mask-size:100% 100%;
+  -webkit-mask-repeat:no-repeat;
+  mask-image:radial-gradient(132% 122% at 100% 4%, #000 30%, rgba(0,0,0,.5) 66%, transparent 98%);
+  mask-size:100% 100%;
+  mask-repeat:no-repeat;
+}
+.ghost span{ aspect-ratio:1; display:flex; align-items:center; justify-content:center; }
+.hero__inner{
+  position:relative; z-index:2;
+  width:100%; max-width:var(--maxw); margin-inline:auto;
+  padding:0 var(--pad) clamp(28px,4.5vh,56px);
+  display:grid; gap:clamp(22px,3.4vh,44px);
+}
+.hero__eyebrow{ display:flex; flex-wrap:wrap; gap:8px 18px; align-items:baseline; }
+.hero__eyebrow .dot{ color:var(--amber); }
+.hero__h1{
+  font-family:var(--serif);
+  font-weight:300;
+  font-size:clamp(2.6rem,7.4vw,7.25rem);
+  line-height:.9;
+  letter-spacing:-.032em;
+  margin:0;
+  max-width:16ch;
+}
+.hero__h1 em{ font-style:italic; font-weight:340; }
+.hero__lead{
+  max-width:56ch; color:var(--fg-dim);
+  font-size:clamp(1rem,1.16vw,1.125rem); line-height:1.62;
+}
+.hero__meta{
+  border-top:1px solid var(--line);
+  padding-top:clamp(14px,2vh,22px);
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:var(--gap) clamp(10px,1.6vw,26px);
+}
+.fact b{
+  display:block;
+  font-family:var(--serif); font-weight:400;
+  font-size:clamp(1.5rem,2.6vw,2.25rem); line-height:1;
+  letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.fact i{
+  display:block; margin-top:8px;
+  font-family:var(--mono); font-style:normal;
+  font-size:.625rem; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--fg-mute);
+}
+.fact.is-am b{ color:var(--amber); }
+.cue{
+  position:relative; z-index:2;
+  display:inline-flex; align-items:center; gap:10px; justify-self:start;
+  color:var(--fg-mute);
+}
+.cue__line{ width:44px; height:1px; background:var(--line-2); position:relative; overflow:hidden; }
+.cue__line::after{
+  content:""; position:absolute; inset:0; background:var(--amber);
+  animation:cue 2.6s var(--ease) infinite;
+}
+@keyframes cue{
+  0%{ transform:translateX(-100%); }
+  55%{ transform:translateX(100%); }
+  100%{ transform:translateX(100%); }
+}
+
+/* ============================================================
+   01 PROVENANCE
+   ============================================================ */
+.prov{ display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:clamp(28px,5vw,80px); align-items:start; }
+.term{
+  background:var(--bg-2);
+  border:1px solid var(--line);
+  border-radius:var(--r-2);
+  overflow:hidden;
+}
+.term__bar{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 12px; border-bottom:1px solid var(--line);
+}
+.term__title{ font-family:var(--mono); font-size:.625rem; letter-spacing:.15em; text-transform:uppercase; color:var(--fg-mute); }
+.copy{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--mono); font-size:.625rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--fg-dim);
+  padding:5px 9px; border:1px solid var(--line-2); border-radius:var(--r-1);
+  transition:color .25s var(--ease), border-color .25s var(--ease), background-color .25s var(--ease);
+}
+.copy:hover{ color:var(--fg); border-color:var(--amber); }
+.copy svg{ width:11px; height:11px; }
+.copy.done{ color:var(--amber-ink); background:var(--amber); border-color:var(--amber); }
+.term__body{
+  padding:clamp(14px,2vw,22px);
+  font-family:var(--mono); font-size:.75rem; line-height:1.85;
+  letter-spacing:.01em;
+  overflow-x:auto;
+}
+.term__body .ln{ display:block; white-space:pre; }
+.term__body .pr{ color:var(--amber); user-select:none; }
+.term__body .cm{ color:var(--fg-mute); }
+.term__body .out{ color:var(--fg); }
+.term__body .out em{ font-style:normal; color:var(--amber); }
+.prov__notes{ display:grid; gap:clamp(18px,2.6vh,30px); }
+.kv{ display:grid; grid-template-columns:auto 1fr; gap:4px 20px; border-top:1px solid var(--line); padding-top:12px; }
+.kv dt{ font-family:var(--mono); font-size:.625rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-mute); }
+.kv dd{ margin:0; font-size:.9375rem; }
+
+/* ============================================================
+   02 ANATOMY
+   ============================================================ */
+.ana{ display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr); gap:clamp(28px,4vw,64px); align-items:stretch; }
+.matrix{
+  display:grid; grid-template-columns:repeat(8,1fr);
+  border:1px solid var(--line);
+  border-radius:var(--r-2);
+  overflow:hidden;
+  background:var(--bg-2);
+}
+@supports (font-size:1cqw){
+  .matrix{ container-type:inline-size; }
+}
+.cell{
+  position:relative;
+  cursor:crosshair;
+  aspect-ratio:1;
+  display:flex; align-items:center; justify-content:center;
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);
+  font-size:clamp(1.25rem,3.2vw,2.75rem);
+  color:var(--fg-dim);
+  transition:background-color .22s var(--ease), color .22s var(--ease);
+  cursor:default;
+}
+.cell:nth-child(8n){ border-right:0; }
+.cell.is-lower{ color:var(--fg-dim); }
+.cell:nth-child(n+57){ border-bottom:0; }
+.cell__i{
+  position:absolute; top:5px; left:6px;
+  font-size:.5rem; letter-spacing:.06em; color:var(--fg-mute);
+  font-weight:400;
+  transition:color .22s var(--ease);
+}
+.cell.is-upper{ color:var(--fg); }
+.cell.is-digit{ color:var(--amber); }
+.cell.is-zero{ color:var(--cold-2); }
+.cell.is-twin{ background:rgba(223,182,58,.09); color:var(--fg); }
+.cell.is-self{ background:var(--amber); color:var(--amber-ink); }
+.cell.is-self .cell__i{ color:rgba(13,15,17,.6); }
+.cell.is-zero.is-self{ background:var(--cold-2); }
+@supports (font-size:1cqw){
+  .cell{ font-size:6cqw; }
+}
+
+.ana__side{ display:grid; gap:clamp(22px,3vh,34px); align-content:space-between; }
+.readout{
+  border:1px solid var(--line); border-radius:var(--r-2);
+  padding:clamp(14px,1.8vw,20px);
+  background:var(--bg-2);
+  min-height:104px;
+  display:grid; align-content:center; gap:6px;
+}
+.readout__glyph{
+  font-family:var(--mono); font-weight:700;
+  font-size:clamp(1.75rem,3.4vw,2.75rem); line-height:1;
+}
+.readout__line{ font-family:var(--mono); font-size:.6875rem; letter-spacing:.1em; color:var(--fg-dim); text-transform:uppercase; }
+.readout__line b{ color:var(--amber); font-weight:400; }
+.bar{ display:flex; height:26px; border:1px solid var(--line); border-radius:var(--r-1); overflow:hidden; }
+.bar span{ flex:1; }
+.bar span.l{ background:rgba(239,235,227,.16); }
+.bar span.u{ background:rgba(239,235,227,.42); }
+.bar span.d{ background:var(--amber); }
+.bar span.z{ background:var(--cold); }
+.leg{ display:grid; gap:10px; }
+.leg__row{ display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:baseline; }
+.leg__sw{ width:10px; height:10px; border-radius:1px; transform:translateY(1px); }
+.leg__row i{ font-style:normal; font-family:var(--mono); font-size:.6875rem; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-dim); }
+.leg__row b{ font-family:var(--mono); font-weight:400; font-size:.75rem; font-variant-numeric:tabular-nums; }
+.notes{ list-style:none; margin:0; padding:0; display:grid; gap:0; }
+.notes li{
+  padding:14px 0;
+  border-top:1px solid var(--line);
+  font-size:.9375rem; line-height:1.55;
+  color:var(--fg-dim);
+  display:grid; grid-template-columns:2.1rem 1fr; gap:12px;
+}
+.notes li:last-child{ border-bottom:1px solid var(--line); }
+.notes li span:first-child{
+  font-family:var(--mono); font-size:.625rem; letter-spacing:.1em;
+  color:var(--fg-mute); padding-top:.3em;
+}
+.notes code{
+  font-family:var(--mono); font-size:.8125rem;
+  color:var(--fg); background:rgba(223,182,58,.11);
+  padding:1px 5px; border-radius:var(--r-1);
+}
+.notes .flag{ color:var(--cold-2); background:rgba(153,156,163,.14); }
+
+/* ============================================================
+   03 HOMOGLYPH (paper)
+   ============================================================ */
+.homo__toggle{
+  display:inline-flex; position:relative; align-items:center;
+  border:1px solid var(--line-2); border-radius:var(--r-1);
+  padding:3px; margin-bottom:clamp(24px,4vh,44px);
+  background:rgba(20,22,26,.03);
+}
+.homo__toggle .ind{
+  position:absolute; top:3px; left:3px; bottom:3px; width:calc(50% - 3px);
+  background:var(--fg); border-radius:1px;
+  transition:transform .45s var(--ease);
+}
+.homo__toggle[data-lens="serif"] .ind{ transform:translateX(100%); }
+.homo__toggle button{
+  position:relative; z-index:1;
+  padding:8px 18px; min-width:7.5rem;
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--fg-dim);
+  transition:color .35s var(--ease);
+}
+.homo__toggle button[aria-pressed="true"]{ color:var(--bg); }
+
+.trio{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(12px,2.2vw,34px); margin-bottom:clamp(34px,6vh,72px); }
+.trio__item{ border-top:1px solid var(--line-2); padding-top:14px; }
+.trio__stage{
+  position:relative;
+  height:clamp(8rem,19vw,15rem);
+  display:flex; align-items:center;
+  margin-bottom:14px;
+}
+.trio__glyph{
+  position:absolute; inset:0;
+  display:flex; align-items:center;
+  font-family:var(--mono); font-weight:700;
+  font-size:clamp(5rem,15vw,12rem);
+  line-height:.8;
+  transition:opacity .5s var(--ease), transform .6s var(--ease);
+}
+.trio__glyph.s{
+  font-family:var(--serif); font-weight:400;
+  font-size:clamp(5.6rem,16.5vw,13rem);
+  letter-spacing:-.03em;
+}
+[data-lens="mono"] .trio__glyph.s{ opacity:0; transform:translateY(6px) scale(.96); }
+[data-lens="mono"] .trio__glyph.m{ opacity:1; }
+[data-lens="serif"] .trio__glyph.m{ opacity:0; transform:translateY(-6px) scale(.96); }
+[data-lens="serif"] .trio__glyph.s{ opacity:1; }
+.trio__cap{ display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+.trio__cap b{ font-family:var(--mono); font-weight:400; font-size:.75rem; letter-spacing:.06em; color:var(--fg-dim); text-transform:none; }
+.trio__cap em{ font-style:normal; font-family:var(--mono); font-size:.6875rem; letter-spacing:.06em; color:var(--fg-mute); text-transform:none; }
+.fams{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(20px,4vw,56px); border-top:1px solid var(--line-2); padding-top:clamp(18px,3vh,30px); }
+.fams h3{ font-family:var(--mono); font-size:.625rem; letter-spacing:.15em; text-transform:uppercase; color:var(--fg-mute); font-weight:400; margin:0 0 14px; }
+.fams ul{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+.fams li{
+  font-family:var(--mono); font-size:.8125rem;
+  border:1px solid var(--line-2); border-radius:var(--r-1);
+  padding:6px 10px; display:inline-flex; align-items:baseline; gap:8px;
+}
+.fams li b{ font-weight:700; font-size:1rem; }
+.fams li i{ font-style:normal; font-size:.5625rem; letter-spacing:.1em; color:var(--fg-mute); }
+.fams li.absent{ opacity:.42; text-decoration:line-through; }
+.fams p{ margin-top:14px; font-size:.9375rem; color:var(--fg-dim); max-width:46ch; }
+
+/* ============================================================
+   04 ARITHMETIC
+   ============================================================ */
+.expr{
+  font-family:var(--mono);
+  font-size:clamp(1rem,2.5vw,2rem);
+  letter-spacing:.02em;
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:.28em;
+  padding-bottom:clamp(18px,3vh,30px);
+  border-bottom:1px solid var(--line);
+  margin-bottom:clamp(26px,4.5vh,52px);
+}
+.expr .d{ color:var(--amber); }
+.expr .op{ color:var(--fg-mute); }
+.expr .res{ color:var(--amber); font-weight:700; }
+.expr .res span{ display:inline-block; min-width:2.2ch; }
+.deriv{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gap); margin-bottom:clamp(34px,6vh,72px); }
+.deriv__item{ border-top:1px solid var(--line-2); padding-top:14px; }
+.deriv__item b{
+  display:block; font-family:var(--mono); font-weight:700;
+  font-size:clamp(1.125rem,1.8vw,1.5rem); letter-spacing:-.01em;
+  margin-bottom:6px;
+}
+.deriv__item b.is-am{ color:var(--amber); }
+.deriv__item span{ font-family:var(--mono); font-size:.625rem; letter-spacing:.13em; text-transform:uppercase; color:var(--fg-mute); display:block; line-height:1.7; }
+.pal{ display:flex; gap:2px; height:clamp(84px,13vw,140px); margin-bottom:18px; border-radius:var(--r-1); overflow:hidden; }
+.pal div{
+  position:relative; display:flex; align-items:flex-end; padding:12px;
+  flex:1 1 0; min-width:0;
+  font-family:var(--mono); font-size:.625rem; letter-spacing:.08em;
+}
+.pal div:nth-child(5){ flex:.7 1 0; }
+.pal .sw1{ background:hsl(45 88% 68%); color:#14161A; }
+.pal .sw2{ background:hsl(45 72% 55%); color:#14161A; }
+.pal .sw3{ background:hsl(45 80% 44%); color:rgba(20,22,26,.86); }
+.pal .sw4{ background:hsl(45 70% 32%); color:rgba(239,235,227,.9); }
+.pal .sw5{ background:hsl(225 16% 60%); color:#14161A; }
+.pal__foot{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px 24px; }
+.pal__foot p{ max-width:52ch; font-size:.9375rem; color:var(--fg-dim); margin:0; }
+
+/* ============================================================
+   05 TWIN
+   ============================================================ */
+.twin{ position:relative; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(20px,4vw,64px); margin-bottom:clamp(34px,6vh,72px); }
+.twin__axis{
+  position:absolute; top:0; bottom:0; left:50%; width:1px;
+  pointer-events:none;
+}
+.twin__axis-line{
+  position:absolute; inset:0; display:block;
+  transform-origin:top center;
+  background:linear-gradient(180deg,transparent,var(--line-2) 14%,var(--line-2) 86%,transparent);
+}
+.twin__axis span{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  writing-mode:vertical-rl;
+  background:var(--bg); padding:14px 9px;
+  font-family:var(--mono); font-size:.5625rem; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--fg-mute); white-space:nowrap;
+}
+.twin__col{ overflow:hidden; padding-bottom:34px; }
+.twin__label{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px solid var(--line-2); padding-top:12px; margin-bottom:20px; }
+.tok{
+  font-family:var(--mono);
+  font-size:clamp(1.5rem,3.55vw,3.25rem);
+  line-height:1.44;
+  width:max-content;
+  letter-spacing:0;
+  user-select:all;
+}
+.tok__row{ display:grid; grid-template-columns:repeat(8,1fr); }
+.tok .d{ color:var(--amber); }
+.tok .z{ color:var(--cold-2); }
+.tok.rev{ margin-left:auto; }
+.twin__facts{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--gap); }
+.twin__facts div{ border-top:1px solid var(--line); padding-top:14px; }
+.twin__facts b{ display:block; font-family:var(--serif); font-weight:400; font-size:clamp(1.5rem,2.6vw,2.25rem); line-height:1; letter-spacing:-.02em; }
+.twin__facts span{ display:block; margin-top:8px; font-family:var(--mono); font-size:.625rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-mute); line-height:1.7; }
+
+/* ============================================================
+   06 INDEX + FOOTER
+   ============================================================ */
+.idx{ display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:clamp(28px,5vw,80px); align-items:start; }
+.profile dl{ display:grid; gap:14px; margin:0; }
+.profile .row{ display:grid; grid-template-columns:7.5rem 1fr; gap:16px; border-top:1px solid var(--line); padding-top:12px; align-items:baseline; }
+.profile dt{ font-family:var(--mono); font-size:.625rem; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-mute); }
+.profile dd{ margin:0; font-size:1.0625rem; }
+.profile dd.tokval{ font-family:var(--mono); font-size:.9375rem; color:var(--amber); }
+.zh{ font-family:"Songti SC","Source Han Serif SC","Noto Serif CJK SC","PingFang SC","Microsoft YaHei",serif;
+  font-size:1.125rem; line-height:1.95; color:var(--fg-dim); margin-top:clamp(20px,3vh,32px); max-width:34ch; letter-spacing:.04em; }
+.cta{
+  display:inline-flex; align-items:center; gap:14px;
+  margin-top:clamp(24px,4vh,42px);
+  padding:18px 26px;
+  border:1px solid var(--line-2);
+  border-radius:var(--r-2);
+  font-family:var(--mono); font-size:.75rem; letter-spacing:.14em; text-transform:uppercase;
+  will-change:transform;
+  transition:border-color .35s var(--ease), color .35s var(--ease);
+}
+.cta svg{ width:26px; height:10px; transition:transform .4s var(--ease); }
+.cta:hover{ border-color:var(--amber); color:var(--amber); }
+.cta:hover svg{ transform:translateX(6px); }
+.record{
+  border:1px solid var(--line); border-radius:var(--r-2);
+  background:var(--bg-2);
+  padding:0 clamp(16px,2.2vw,26px);
+}
+.record__row{
+  display:grid; grid-template-columns:7rem minmax(0,1fr); gap:8px 20px;
+  padding:clamp(13px,1.7vh,19px) 0;
+  border-bottom:1px solid var(--line);
+  align-items:baseline;
+}
+.record__row:last-child{ border-bottom:0; }
+.record__row dt{
+  font-family:var(--mono); font-size:.625rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--fg-mute);
+}
+.record__row dd{ margin:0; font-size:.9375rem; }
+.record__row dd.tokline{
+  font-family:var(--mono); font-size:.875rem; line-height:1.75;
+  color:var(--amber); word-break:break-all; user-select:all;
+}
+.record__row dd .n{ font-variant-numeric:tabular-nums; color:var(--fg); }
+.colophon{
+  border-top:1px solid var(--line);
+  margin-top:clamp(40px,7vh,88px);
+  padding-top:clamp(20px,3vh,32px);
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gap);
+}
+.colophon div{ font-family:var(--mono); font-size:.625rem; letter-spacing:.11em; line-height:1.9; text-transform:uppercase; color:var(--fg-mute); }
+.colophon b{ display:block; color:var(--fg-dim); font-weight:400; }
+
+/* ============================================================
+   MOTION SETUP  (removed automatically if GSAP or motion is absent)
+   ============================================================ */
+.anim [data-reveal]{ opacity:0; }
+.anim [data-split] .w-i{ transform:translateY(126%); }
+.anim .twin__axis-line{ transform:scaleY(0); }
+.anim .ghost{ opacity:0; }
+.anim .cell{ opacity:0; }
+.anim .hero__inner [data-hero]{ opacity:0; }
+.anim .cue{ opacity:0; }
+
+.w{ display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.16em; margin-bottom:-.16em; }
+.w-i{ display:inline-block; }
+
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+  .anim [data-reveal],.anim .ghost,.anim .cell,.anim .hero__inner [data-hero],.anim .cue{ opacity:1 !important; }
+  .anim [data-split] .w-i{ transform:none !important; }
+  .anim .twin__axis-line{ transform:none !important; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:1180px){
+  .sec__head{ grid-template-columns:4.5rem minmax(0,1fr); }
+  .sec__note{ grid-column:2; padding-top:0; margin-top:14px; }
+  .deriv{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .colophon{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media (max-width:1024px){
+  .ana,.prov,.idx{ grid-template-columns:minmax(0,1fr); }
+  .ghost{ width:64vw; font-size:8vw; --ghost-o:.085; }
+  .hero{ justify-content:flex-end; }
+  .hero__meta{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .hero__lead{ max-width:50ch; }
+}
+@media (max-width:860px){
+  .hud__nav{ display:none; }
+  .twin__facts{ grid-template-columns:minmax(0,1fr); }
+  .twin{ grid-template-columns:minmax(0,1fr); }
+  .twin__axis{ display:none; }
+  .tok{ font-size:min(8.8vw,3.25rem); }
+  .tok.rev{ margin-left:0; }
+  .fams{ grid-template-columns:minmax(0,1fr); }
+  .cue{ display:none; }
+  .ghost{ width:74vw; font-size:9.25vw; --ghost-o:.05; }
+}
+@media (max-width:640px){
+  .sec__head{ grid-template-columns:minmax(0,1fr); gap:10px; }
+  .sec__note{ grid-column:1; }
+  .sec__idx{ padding-top:0; }
+  .hero__meta{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .deriv,.colophon{ grid-template-columns:minmax(0,1fr); }
+  .trio{ gap:8px; }
+  .trio__cap{ flex-direction:column; gap:2px; }
+  .cell__i{ font-size:.4375rem; top:3px; left:4px; }
+  .profile .row, .record__row{ grid-template-columns:minmax(0,1fr); gap:4px; }
+  .hero__eyebrow .dot{ display:none; }
+  .hero__eyebrow{ gap:4px 14px; }
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#overture">Skip to content</a>
+<div class="grain" aria-hidden="true"></div>
+<div class="aura" id="aura" aria-hidden="true"></div>
+
+<!-- ===================== HUD ===================== -->
+<header class="hud">
+  <div class="hud__bar">
+    <a class="brand" href="#overture" aria-label="Top of page">
+      <b>8KS8</b><i>SPECIMEN</i>
+    </a>
+    <nav class="hud__nav" aria-label="Sections">
+      <a href="#provenance" data-navlink="01">01 Provenance</a>
+      <a href="#anatomy" data-navlink="02">02 Anatomy</a>
+      <a href="#homoglyph" data-navlink="03">03 Homoglyph</a>
+      <a href="#arithmetic" data-navlink="04">04 Arithmetic</a>
+      <a href="#twin" data-navlink="05">05 Twin</a>
+      <a href="#index" data-navlink="06">06 Index</a>
+    </nav>
+    <span class="hud__here" id="hudHere">00 Overture</span>
+  </div>
+  <div class="hud__rail" id="rail" aria-hidden="true">
+    <div class="rail__ticks"></div>
+    <div class="rail__fill" id="railFill"></div>
+    <div class="rail__read" id="railRead"><b>8</b><i>01</i></div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ===================== 00 OVERTURE ===================== -->
+<section class="sec hero" id="overture" data-nav="00 Overture" aria-labelledby="h-overture">
+  <div class="hero__grid-lines" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="ghost" id="ghost" aria-hidden="true" data-speed="0.14"></div>
+
+  <div class="hero__inner">
+    <p class="hero__eyebrow mono" data-hero>
+      <span id="whoName" class="mono--am">&#10216;NAME&#10217;</span>
+      <span class="dot" aria-hidden="true">/</span>
+      <span id="whoRole">Design Engineer</span>
+      <span class="dot" aria-hidden="true">/</span>
+      <span class="mono--lo">Specimen 8KS8 &mdash; one draw, no seed</span>
+    </p>
+
+    <h1 class="hero__h1" id="h-overture" data-split data-hero>
+      A random string is a <em>self&#8209;portrait</em>.
+    </h1>
+
+    <p class="hero__lead" data-hero>
+      Sixty&#8209;four glyphs, drawn once and never again. What follows is not decoration:
+      it is that draw, read closely &mdash; its grid, its arithmetic, its twins, and the
+      five glyphs that all look like a circle.
+    </p>
+
+    <div class="hero__meta" data-hero>
+      <div class="fact"><b class="tnum">064</b><i>Glyphs</i></div>
+      <div class="fact"><b class="tnum">8&times;8</b><i>The shape</i></div>
+      <div class="fact is-am"><b class="tnum">45</b><i>Digit sum</i></div>
+      <div class="fact"><b class="tnum">0&thinsp;/&thinsp;32</b><i>Mirrors that match</i></div>
+      <div class="fact"><b class="tnum">45&deg;</b><i>Accent hue</i></div>
+    </div>
+  </div>
+
+  <div class="cue" aria-hidden="true">
+    <span class="cue__line"></span>
+    <span class="mono mono--lo">Scroll</span>
+  </div>
+</section>
+
+<!-- ===================== 01 PROVENANCE ===================== -->
+<section class="sec" id="provenance" data-nav="01 Provenance" aria-labelledby="h-provenance">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">01</span>
+      <h2 class="h2" id="h-provenance" data-split>Provenance</h2>
+      <p class="sec__note">One line of PowerShell. No seed, no plan, no second attempt.</p>
+    </header>
+
+    <div class="prov">
+      <div>
+        <div class="term">
+          <div class="term__bar">
+            <span class="term__title">powershell 5.1 &middot; draw 01</span>
+            <button class="copy" id="copyBtn" type="button" aria-describedby="copyState">
+              <svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><rect x="1.5" y="3.5" width="7" height="7" stroke="currentColor"/><path d="M3.5 3.5V1.5h7v7h-2" stroke="currentColor"/></svg>
+              <span id="copyLabel">Copy token</span>
+            </button>
+          </div>
+          <div class="term__body" id="termBody">
+            <span class="ln"><span class="pr">$</span> <span class="cm"># A&ndash;Z a&ndash;z 0&ndash;9, 62 characters, then 64 draws.</span></span>
+            <span class="ln"><span class="pr">$</span> $c = <span class="cm">'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'</span></span>
+            <span class="ln"><span class="pr">&gt;</span> -join (1..64 | % { $c[(Get-Random -Maximum $c.Length)] })</span>
+            <span class="ln out" id="termOut">8ks8TlphrgkXwuZAno0LcfUT4FOytK00RTx7Fwx9PhUbZWnFLVZ9lcreUsNptuTx</span>
+          </div>
+        </div>
+        <p class="sr-only" id="copyState" aria-live="polite"></p>
+      </div>
+
+      <div class="prov__notes">
+        <p class="body-copy" data-reveal>
+          The draw is uniform and independent: every one of the sixty&#8209;four positions
+          could have been any of sixty&#8209;two characters. Nothing was chosen. Everything
+          that follows is therefore <strong>found</strong>, and the only editorial act left
+          is deciding what to measure.
+        </p>
+        <dl class="kv" data-reveal>
+          <dt>Codepoints</dt><dd class="tnum">37 distinct &mdash; exactly 8&sup2; &minus; 3&sup3;. Folded for case: 21 letters and 5 digits.</dd>
+          <dt>Frequencies</dt><dd class="tnum">Six glyphs appear three times or more &mdash; <strong>T</strong> leads with four; fourteen appear twice; seventeen appear once and never again.</dd>
+          <dt>Digits</dt><dd class="tnum">8 8 0 4 0 0 7 9 9 &mdash; five codepoints. The other five digits, 1 2 3 5 6, were never drawn.</dd>
+          <dt>Adjacency</dt><dd class="tnum">One doubled pair in the whole token: <span class="mono--co">00</span>, at 31&ndash;32</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 02 ANATOMY ===================== -->
+<section class="sec" id="anatomy" data-nav="02 Anatomy" aria-labelledby="h-anatomy">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">02</span>
+      <h2 class="h2" id="h-anatomy" data-split>Anatomy</h2>
+      <p class="sec__note">64 = 8&sup2;. The token has a natural shape, and it is a square. Hover any cell to find its twins.</p>
+    </header>
+
+    <p class="sr-only">
+      The token reads, in order: 8 k s 8 T l p h r g k X w u Z A n o 0 L c f U T 4 F O y t K 0 0 R T x 7 F w x 9 P h U b Z W n F L V Z 9 l c r e U s N p t u T x.
+      Composition: 31 lowercase, 24 uppercase, 9 digits, 64 total.
+    </p>
+
+    <div class="ana">
+      <div class="matrix" id="matrix" aria-hidden="true"></div>
+
+      <div class="ana__side">
+        <div class="readout" id="readout" aria-hidden="true">
+          <span class="readout__glyph" id="roGlyph">T</span>
+          <span class="readout__line" id="roLine"><b>&times;4</b> &mdash; 05, 24, 34, 63</span>
+        </div>
+
+        <div>
+          <div class="bar" id="bar" aria-hidden="true"></div>
+          <div class="leg" style="margin-top:16px">
+            <div class="leg__row">
+              <span class="leg__sw" style="background:rgba(239,235,227,.16)"></span>
+              <i>Lowercase</i><b class="tnum">31</b>
+            </div>
+            <div class="leg__row">
+              <span class="leg__sw" style="background:rgba(239,235,227,.42)"></span>
+              <i>Uppercase</i><b class="tnum">24</b>
+            </div>
+            <div class="leg__row">
+              <span class="leg__sw" style="background:var(--amber)"></span>
+              <i>Digits</i><b class="tnum">09</b>
+            </div>
+            <div class="leg__row">
+              <span class="leg__sw" style="background:var(--cold)"></span>
+              <i>The doubled zero</i><b class="tnum">02</b>
+            </div>
+          </div>
+        </div>
+
+        <ul class="notes">
+          <li><span>a</span><span>The only adjacent duplicate is <code class="flag">00</code> at 31&ndash;32 &mdash; which closes exactly on the midpoint.</span></li>
+          <li><span>b</span><span><code>o</code>&thinsp;18, <code>0</code>&thinsp;19, <code>L</code>&thinsp;20: three consecutive glyphs, three codepoints, one silhouette family.</span></li>
+          <li><span>c</span><span><code>F</code> sits at 26, 37 and 48 &mdash; an exact arithmetic progression, step 11. Nothing in the generator could intend that.</span></li>
+          <li><span>d</span><span>Eighteen lowercase codepoints, fourteen uppercase, five digits: 37 &mdash; and no glyph appears at more than four positions.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 03 HOMOGLYPH (paper) ===================== -->
+<section class="sec paper" id="homoglyph" data-nav="03 Homoglyph" aria-labelledby="h-homoglyph">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">03</span>
+      <h2 class="h2" id="h-homoglyph" data-split>Homoglyph</h2>
+    <p class="sec__note">Three codepoints in a row &mdash; 18, 19, 20. The same three silhouettes, in two typefaces: the monospace defends its zero with a dot; the serif separates them by contrast and proportion instead.</p>
+    </header>
+
+    <div class="homo__toggle" id="lens" data-lens="mono" role="group" aria-label="Typeface lens">
+      <span class="ind" aria-hidden="true"></span>
+      <button type="button" data-lens-btn="mono" aria-pressed="true">Monospace</button>
+      <button type="button" data-lens-btn="serif" aria-pressed="false">Serif</button>
+    </div>
+
+    <div class="trio">
+      <figure class="trio__item" style="margin:0">
+        <div class="trio__stage">
+          <span class="trio__glyph m" aria-hidden="true">o</span>
+          <span class="trio__glyph s" aria-hidden="true">o</span>
+        </div>
+        <figcaption class="trio__cap">
+          <b>Position 18 &middot; lowercase o</b><em>U+006F</em>
+        </figcaption>
+      </figure>
+      <figure class="trio__item" style="margin:0">
+        <div class="trio__stage">
+          <span class="trio__glyph m" aria-hidden="true">0</span>
+          <span class="trio__glyph s" aria-hidden="true">0</span>
+        </div>
+        <figcaption class="trio__cap">
+          <b>Position 19 &middot; digit zero</b><em>U+0030</em>
+        </figcaption>
+      </figure>
+      <figure class="trio__item" style="margin:0">
+        <div class="trio__stage">
+          <span class="trio__glyph m" aria-hidden="true">L</span>
+          <span class="trio__glyph s" aria-hidden="true">L</span>
+        </div>
+        <figcaption class="trio__cap">
+          <b>Position 20 &middot; capital L</b><em>U+004C</em>
+        </figcaption>
+      </figure>
+    </div>
+
+    <div class="fams">
+      <div>
+        <h3>Present in the token</h3>
+        <ul>
+          <li><b>o</b><i>18</i></li>
+          <li><b>0</b><i>19 &middot; 31 &middot; 32</i></li>
+          <li><b>O</b><i>27</i></li>
+          <li><b>l</b><i>06 &middot; 53</i></li>
+          <li><b>L</b><i>20 &middot; 49</i></li>
+        </ul>
+        <p>Five glyphs in this token are, or contain, a circle. One of them wears a number's mask between two letters &mdash; and the two zeros at 31&thinsp;&ndash;&thinsp;32 touch.</p>
+      </div>
+      <div>
+        <h3>Absent from the token</h3>
+        <ul>
+          <li class="absent"><b>i</b></li>
+          <li class="absent"><b>I</b></li>
+          <li class="absent"><b>1</b></li>
+          <li class="absent"><b>j</b></li>
+          <li class="absent"><b>J</b></li>
+        </ul>
+        <p>Not one of the thin&#8209;vertical confusables was drawn. Four other digits are missing too &mdash; 2, 3, 5, 6 &mdash; and five letters: d, i, j, m, q. The only vertical stroke in sixty&#8209;four glyphs is lowercase <b>l</b>, twice, at 06 and 53, forty&#8209;seven apart.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 04 ARITHMETIC ===================== -->
+<section class="sec" id="arithmetic" data-nav="04 Arithmetic" aria-labelledby="h-arithmetic">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">04</span>
+      <h2 class="h2" id="h-arithmetic" data-split>Arithmetic</h2>
+      <p class="sec__note">The palette was not chosen. It was computed from the digits, and then obeyed without exception.</p>
+    </header>
+
+    <div class="expr">
+      <span class="d">8</span><span class="op">+</span><span class="d">8</span><span class="op">+</span><span class="d">0</span><span class="op">+</span><span class="d">4</span><span class="op">+</span><span class="d">0</span><span class="op">+</span><span class="d">0</span><span class="op">+</span><span class="d">7</span><span class="op">+</span><span class="d">9</span><span class="op">+</span><span class="d">9</span><span class="op">=</span><span class="res"><span id="sumOut" class="tnum">45</span></span>
+    </div>
+
+    <div class="deriv">
+      <div class="deriv__item"><b class="tnum">45</b><span>Sum of the nine digits</span></div>
+      <div class="deriv__item"><b class="tnum">T&#8329; = 45</b><span>1+2+&hellip;+9 &mdash; the ninth triangular number</span></div>
+      <div class="deriv__item"><b class="tnum">45&deg;</b><span>Hue, taken literally</span></div>
+      <div class="deriv__item"><b class="is-am">#DFB63A</b><span>hsl(45 72% 55%) &mdash; every amber line on this page</span></div>
+    </div>
+
+    <div class="pal" aria-hidden="true">
+      <div class="sw1">hsl(45 88% 68%)</div>
+      <div class="sw2">hsl(45 72% 55%)</div>
+      <div class="sw3">hsl(45 80% 44%)</div>
+      <div class="sw4">hsl(45 70% 32%)</div>
+      <div class="sw5">hsl(225 16% 60%) &middot; complement</div>
+    </div>
+    <div class="pal__foot">
+      <p data-reveal>
+        One hue, four values, used as a hairline and never as a field &mdash; except here,
+        where the ink chart is the subject. The cold fifth is the complement of 45 at the
+        lowest saturation it can hold and still read: reserved for a single anomaly, the
+        doubled zero.
+      </p>
+      <p class="mono mono--lo" data-reveal>A 45&deg; pair: two nines, twelve apart</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 05 TWIN ===================== -->
+<section class="sec" id="twin" data-nav="05 Twin" aria-labelledby="h-twin">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">05</span>
+      <h2 class="h2" id="h-twin" data-split>Twin</h2>
+      <p class="sec__note">Reverse the draw. Thirty&#8209;two pairs line up &mdash; and not one of them agrees.</p>
+    </header>
+
+    <div class="twin">
+      <div class="twin__axis" aria-hidden="true"><i class="twin__axis-line"></i><span>Mirror axis &middot; between 32 and 33</span></div>
+      <div class="twin__col">
+        <div class="twin__label">
+          <span class="mono mono--lo">Forward &middot; 01 &rarr; 64</span>
+          <span class="mono mono--am">as drawn</span>
+        </div>
+        <div class="tok" id="tokFwd" data-speed="0.07" aria-label="The token as drawn"></div>
+      </div>
+      <div class="twin__col">
+        <div class="twin__label">
+          <span class="mono mono--lo">Reverse &middot; 64 &rarr; 01</span>
+          <span class="mono mono--co">the twin</span>
+        </div>
+        <div class="tok rev" id="tokRev" data-speed="-0.07" aria-label="The token reversed"></div>
+      </div>
+    </div>
+
+    <div class="twin__facts">
+      <div><b class="tnum">32&thinsp;/&thinsp;0</b><span>Mirror pairs &mdash; and the number of them that match. A perfect asymmetry, not a flaw.</span></div>
+      <div><b>8ks8 &rarr; 8sk8</b><span>The first four glyphs, read backwards, give the same four glyphs one transposition away. Nothing else in the token comes that close to closing.</span></div>
+      <div><b class="tnum">31 / 24 / 9</b><span>Lowercase, uppercase, digits &mdash; identical in both directions. Only the order is lost.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 06 INDEX ===================== -->
+<section class="sec" id="index" data-nav="06 Index" aria-labelledby="h-index">
+  <div class="wrap">
+    <header class="sec__head">
+      <span class="sec__idx">06</span>
+      <h2 class="h2" id="h-index" data-split>Index</h2>
+      <p class="sec__note">The specimen is complete. What remains is the person it was drawn for.</p>
+    </header>
+
+    <div class="idx">
+      <div class="profile">
+        <dl>
+          <div class="row"><dt>Name</dt><dd class="tokval">&lang;NAME&rang;</dd></div>
+          <div class="row"><dt>Role</dt><dd>Design engineer &mdash; interface &amp; motion</dd></div>
+          <div class="row"><dt>Based</dt><dd>&lang;CITY&rang;</dd></div>
+          <div class="row"><dt>Contact</dt><dd class="tokval">&lang;EMAIL&rang;</dd></div>
+        </dl>
+        <p class="zh">以一次随机为材料，把偶然读成必然。</p>
+        <a class="cta" id="cta" href="#index">
+          <span>Say hello</span>
+          <svg viewBox="0 0 26 10" fill="none" aria-hidden="true"><path d="M0 5h23M19 1l4 4-4 4" stroke="currentColor" stroke-width="1.2"/></svg>
+        </a>
+      </div>
+
+      <div>
+        <div class="record">
+          <dl style="margin:0">
+            <div class="record__row"><dt>Token</dt><dd id="hashTok" class="tokline">8ks8TlphrgkXwuZAno0LcfUT4FOytK00RTx7Fwx9PhUbZWnFLVZ9lcreUsNptuTx</dd></div>
+            <div class="record__row"><dt>Length</dt><dd><span class="n">64</span> glyphs &mdash; 31 lowercase, 24 uppercase, 9 digits</dd></div>
+            <div class="record__row"><dt>Shape</dt><dd><span class="n">8 &times; 8</span> &mdash; the token's natural form</dd></div>
+            <div class="record__row"><dt>Mirrors</dt><dd><span class="n">32</span> pairs, <span class="n">0</span> matches</dd></div>
+            <div class="record__row"><dt>SHA&#8209;256</dt><dd><span class="n">CB3F937C4926</span> &mdash; first twelve</dd></div>
+            <div class="record__row"><dt>Draw</dt><dd><span class="n">2026&#8209;10&#8209;15</span>, one of one</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="colophon">
+      <div><b>Typefaces</b>Fraunces &amp; Space Mono, via Google Fonts</div>
+      <div><b>Motion</b>GSAP 3, ScrollTrigger, Lenis inertia</div>
+      <div><b>Measurements</b>Every figure on this page is computed from the token</div>
+      <div><b>Payload</b>No analytics, no cookies, one file</div>
+    </div>
+
+    <p class="mono mono--lo" style="margin-top:clamp(40px,7vh,80px)">Specimen 8KS8 &mdash; 64 / 64 glyphs accounted for.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     SINGLE SOURCE OF TRUTH
+     Every visual on this page is derived from this one string.
+     ============================================================ */
+  var TOKEN = "8ks8TlphrgkXwuZAno0LcfUT4FOytK00RTx7Fwx9PhUbZWnFLVZ9lcreUsNptuTx";
+  var REV = TOKEN.split("").reverse().join("");
+
+  /* ▸ 个人资料：改这里即可（占位符 ⟨…⟩ 直接替换） */
+  var PROFILE = {
+    name: "⟨NAME⟩",
+    role: "Design Engineer — Interface & Motion",
+    city: "⟨CITY⟩",
+    email: "⟨EMAIL⟩"
+  };
+
+  var root = document.documentElement;
+  var reduce = false;
+  try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+  var hasGsap = false;
+  var gsap = null;
+  var ScrollTrigger = null;
+
+  /* GSAP / ScrollTrigger / Lenis arrive as `defer`red scripts, which execute AFTER
+     this inline script is parsed. They must therefore be resolved at boot time —
+     reading window.gsap here would always be undefined and silently kill every
+     ScrollTrigger on the page. */
+  function detectLibs() {
+    gsap = window.gsap || null;
+    ScrollTrigger = window.ScrollTrigger || null;
+    hasGsap = !!(gsap && ScrollTrigger);
+    if (hasGsap) { gsap.registerPlugin(ScrollTrigger); }
+    /* Without motion — or without GSAP — the page must present its final state. */
+    if (!hasGsap || reduce) { root.classList.remove("anim"); }
+  }
+
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+
+  /* ---------- classification helpers ---------- */
+  function kind(ch) {
+    if (ch >= "0" && ch <= "9") { return "d"; }
+    if (ch >= "A" && ch <= "Z") { return "u"; }
+    return "l";
+  }
+  function positionsOf(ch) {
+    var out = [];
+    for (var i = 0; i < TOKEN.length; i++) { if (TOKEN.charAt(i) === ch) { out.push(i + 1); } }
+    return out;
+  }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function span(ch, cls) {
+    var s = document.createElement("span");
+    if (cls) { s.className = cls; }
+    s.textContent = ch;
+    return s;
+  }
+
+  /* ---------- profile injection ---------- */
+  function injectProfile() {
+    var map = { whoName: PROFILE.name, whoRole: PROFILE.role };
+    for (var id in map) {
+      if (Object.prototype.hasOwnProperty.call(map, id)) {
+        var el = document.getElementById(id);
+        if (el) { el.textContent = map[id]; }
+      }
+    }
+    $$(".tokval").forEach(function (el, i) {
+      el.textContent = i === 0 ? PROFILE.name : PROFILE.email;
+    });
+    var cta = $("#cta");
+    if (cta) {
+      cta.setAttribute("href", "mailto:" + PROFILE.email);
+      cta.setAttribute("aria-label", "Email " + PROFILE.name);
+    }
+  }
+
+  /* ============================================================
+     BUILD: hero ghost (8x8), matrix, bar, twin blocks
+     ============================================================ */
+  function buildGhost() {
+    var g = $("#ghost");
+    if (!g) { return; }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < TOKEN.length; i++) {
+      frag.appendChild(span(TOKEN.charAt(i)));
+    }
+    g.appendChild(frag);
+  }
+
+  function buildMatrix() {
+    var m = $("#matrix");
+    if (!m) { return; }
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < TOKEN.length; i++) {
+      var ch = TOKEN.charAt(i);
+      var cell = document.createElement("div");
+      cell.className = "cell is-" + (kind(ch) === "d" ? "digit" : kind(ch) === "u" ? "upper" : "lower");
+      cell.setAttribute("data-ch", ch);
+      cell.setAttribute("data-i", String(i + 1));
+      if (ch === "0") { cell.classList.add("is-zero"); }
+      var idx = document.createElement("span");
+      idx.className = "cell__i";
+      idx.textContent = pad2(i + 1);
+      cell.appendChild(idx);
+      cell.appendChild(span(ch));
+      frag.appendChild(cell);
+    }
+    m.appendChild(frag);
+
+    /* composition bar, same 64 order */
+    var bar = $("#bar");
+    if (bar) {
+      var bf = document.createDocumentFragment();
+      for (var j = 0; j < TOKEN.length; j++) {
+        var cj = TOKEN.charAt(j);
+        var k = kind(cj);
+        bf.appendChild(span("", cj === "0" ? "z" : k));
+      }
+      bar.appendChild(bf);
+    }
+  }
+
+  function buildTwin() {
+    [["tokFwd", TOKEN], ["tokRev", REV]].forEach(function (pair) {
+      var host = document.getElementById(pair[0]);
+      if (!host) { return; }
+      var text = pair[1];
+      var frag = document.createDocumentFragment();
+      for (var r = 0; r < text.length; r += 8) {
+        var row = document.createElement("div");
+        row.className = "tok__row";
+        for (var i = r; i < Math.min(r + 8, text.length); i++) {
+          var ch = text.charAt(i);
+          var k = kind(ch);
+          row.appendChild(span(ch, ch === "0" ? "z" : k === "d" ? "d" : ""));
+        }
+        frag.appendChild(row);
+      }
+      host.appendChild(frag);
+    });
+  }
+
+  /* ============================================================
+     MATRIX INTERACTION — find the twins
+     ============================================================ */
+  function matrixHover() {
+    var m = $("#matrix");
+    if (!m) { return; }
+    var cells = $$(".cell", m);
+    var roGlyph = $("#roGlyph");
+    var roLine = $("#roLine");
+    var active = null;
+
+    function paint(ch) {
+      var hits = [];
+      cells.forEach(function (c) {
+        var same = c.getAttribute("data-ch") === ch;
+        var isSelf = c.getAttribute("data-i") === active;
+        c.classList.toggle("is-twin", same && !isSelf);
+        c.classList.toggle("is-self", same && isSelf);
+        if (same) { hits.push(parseInt(c.getAttribute("data-i"), 10)); }
+      });
+      if (roGlyph) { roGlyph.textContent = ch; }
+      if (roLine) {
+        var cls = kind(ch);
+        var label = cls === "d" ? "digit" : cls === "u" ? "uppercase" : "lowercase";
+        roLine.innerHTML = "<b>&times;" + hits.length + "</b> &mdash; " + label + " &middot; " +
+          hits.map(pad2).join(", ");
+      }
+    }
+    function clear() {
+      active = null;
+      cells.forEach(function (c) { c.classList.remove("is-twin", "is-self"); });
+      var list = positionsOf("T");
+      if (roGlyph) { roGlyph.textContent = "T"; }
+      if (roLine) {
+        roLine.innerHTML = "<b>&times;" + list.length + "</b> &mdash; uppercase &middot; " +
+          list.map(pad2).join(", ");
+      }
+    }
+
+    m.addEventListener("pointerover", function (e) {
+      var c = e.target.closest ? e.target.closest(".cell") : null;
+      if (!c || !m.contains(c)) { return; }
+      active = c.getAttribute("data-i");
+      paint(c.getAttribute("data-ch"));
+    });
+    m.addEventListener("pointerleave", clear);
+    m.addEventListener("click", function (e) {
+      var c = e.target.closest ? e.target.closest(".cell") : null;
+      if (!c || !m.contains(c)) { return; }
+      active = c.getAttribute("data-i");
+      paint(c.getAttribute("data-ch"));
+    });
+    clear();
+  }
+
+  /* ============================================================
+     LENS TOGGLE
+     ============================================================ */
+  function lensToggle() {
+    var box = $("#lens");
+    if (!box) { return; }
+    var btns = $$("[data-lens-btn]", box);
+    function set(lens) {
+      box.setAttribute("data-lens", lens);
+      btns.forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.getAttribute("data-lens-btn") === lens));
+      });
+    }
+    btns.forEach(function (b) {
+      b.addEventListener("click", function () { set(b.getAttribute("data-lens-btn")); });
+    });
+  }
+
+  /* ============================================================
+     COPY
+     ============================================================ */
+  function copyButton() {
+    var btn = $("#copyBtn");
+    var label = $("#copyLabel");
+    var live = $("#copyState");
+    if (!btn) { return; }
+    var t = null;
+    btn.addEventListener("click", function () {
+      var done = function () {
+        btn.classList.add("done");
+        if (label) { label.textContent = "Copied 64/64"; }
+        if (live) { live.textContent = "Token copied to clipboard."; }
+        clearTimeout(t);
+        t = setTimeout(function () {
+          btn.classList.remove("done");
+          if (label) { label.textContent = "Copy token"; }
+        }, 2000);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(TOKEN).then(done, function () { legacy(); });
+      } else { legacy(); }
+      function legacy() {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = TOKEN;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.top = "-1000px";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          done();
+        } catch (e) {
+          if (live) { live.textContent = "Copy failed. Select the token manually."; }
+        }
+      }
+    });
+  }
+
+  /* ============================================================
+     HUD: rail, readout, section label, smooth anchors
+     ============================================================ */
+  function rail() {
+    var fill = $("#railFill");
+    var host = $("#rail");
+    var read = $("#railRead");
+    if (!fill || !host) { return; }
+    var last = -1;
+
+    function update() {
+      var doc = document.documentElement;
+      var max = (doc.scrollHeight - window.innerHeight);
+      var p = max > 0 ? Math.min(1, Math.max(0, (window.pageYOffset || doc.scrollTop) / max)) : 0;
+      if (Math.abs(p - last) < 0.0015) { return; }
+      last = p;
+      fill.style.clipPath = "inset(0 " + (100 * (1 - p)).toFixed(2) + "% 0 0)";
+    }
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", function () { last = -1; update(); });
+
+    if (read && window.matchMedia && window.matchMedia("(pointer:fine)").matches) {
+      host.addEventListener("pointermove", function (e) {
+        var r = host.getBoundingClientRect();
+        if (!r.width) { return; }
+        var i = Math.max(0, Math.min(63, Math.floor(((e.clientX - r.left) / r.width) * 64)));
+        var ch = TOKEN.charAt(i);
+        read.innerHTML = "<b>" + ch + "</b><i>" + pad2(i + 1) + "</i>";
+        read.style.left = (((i + 0.5) / 64) * 100) + "%";
+        read.classList.add("on");
+      });
+      host.addEventListener("pointerleave", function () { read.classList.remove("on"); });
+    }
+  }
+
+  function sectionLabel() {
+    var out = $("#hudHere");
+    if (!out) { return; }
+    var secs = $$("section[data-nav]");
+    var current = "00 Overture";
+
+    function show(text) {
+      if (text === current) { return; }
+      current = text;
+      if (!hasGsap || reduce) { out.textContent = text; return; }
+      var tl = gsap.timeline();
+      tl.to(out, { yPercent: -60, opacity: 0, duration: 0.22, ease: "power2.in" })
+        .add(function () { out.textContent = text; })
+        .fromTo(out, { yPercent: 70, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.34, ease: "power3.out" });
+    }
+
+    if (!hasGsap || reduce) {
+      window.addEventListener("scroll", function () {
+        var y = window.pageYOffset + window.innerHeight * 0.42;
+        var hit = secs[0];
+        secs.forEach(function (s) { if (s.offsetTop <= y) { hit = s; } });
+        if (hit) { show(hit.getAttribute("data-nav")); markNav(hit.id); }
+      }, { passive: true });
+      return;
+    }
+
+    secs.forEach(function (s) {
+      ScrollTrigger.create({
+        trigger: s,
+        start: "top 45%",
+        end: "bottom 45%",
+        onToggle: function (self) {
+          if (self.isActive) { show(s.getAttribute("data-nav")); markNav(s.id); }
+        }
+      });
+    });
+  }
+
+  function markNav(id) {
+    $$(".hud__nav a").forEach(function (a) {
+      var on = a.getAttribute("href") === "#" + id;
+      if (on) { a.setAttribute("aria-current", "true"); } else { a.removeAttribute("aria-current"); }
+    });
+  }
+
+  /* ============================================================
+     MOTION
+     ============================================================ */
+  function splitWords(rootEl) {
+    var walk = function (node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 3) {
+          var parts = child.textContent.split(/(\s+)/);
+          if (!parts.length) { return; }
+          var frag = document.createDocumentFragment();
+          parts.forEach(function (w) {
+            if (!w) { return; }
+            if (/^\s+$/.test(w)) { frag.appendChild(document.createTextNode(w)); return; }
+            var outer = document.createElement("span");
+            outer.className = "w";
+            var inner = document.createElement("span");
+            inner.className = "w-i";
+            inner.textContent = w;
+            outer.appendChild(inner);
+            frag.appendChild(outer);
+          });
+          child.parentNode.replaceChild(frag, child);
+        } else if (child.nodeType === 1 && !child.classList.contains("w")) {
+          walk(child);
+        }
+      });
+    };
+    walk(rootEl);
+  }
+
+  function scramble(el, text, dur, delay) {
+    var pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var start = performance.now() + (delay || 0);
+    var stopped = false;
+    function tick(now) {
+      if (stopped) { return; }
+      var t = Math.min(1, Math.max(0, (now - start) / dur));
+      if (t >= 1) { el.textContent = text; return; }
+      var lock = Math.floor(t * t * text.length * 1.5);
+      var out = "";
+      for (var i = 0; i < text.length; i++) {
+        out += i < lock ? text.charAt(i) : pool.charAt((Math.random() * pool.length) | 0);
+      }
+      el.textContent = out;
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+    return function () { stopped = true; el.textContent = text; };
+  }
+
+  function motion() {
+    if (!hasGsap || reduce) { return; }
+
+    /* ---- hero: word masks, decode, staggered meta ---- */
+    $$("[data-split]").forEach(splitWords);
+
+    var order = [];
+    var heroBits = $$(".hero [data-hero]");
+    var h1 = $(".hero__h1");
+    var words = h1 ? $$(".w-i", h1) : [];
+    var termOut = $("#termOut");
+    var outText = termOut ? termOut.textContent : "";
+    if (termOut) { termOut.textContent = ""; }
+
+    /* hero intro is a load timeline, not a scroll one */
+    var tl = gsap.timeline({ delay: 0.12 });
+    if (heroBits.length) {
+      tl.fromTo(heroBits, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09 });
+    }
+    if (words.length) {
+      /* `y: 0` is load-bearing: GSAP parses the CSS percentage pre-state
+         (.anim [data-split] .w-i) into a pixel offset, which would otherwise
+         survive the tween and leave every headline sitting below its mask. */
+      tl.fromTo(words, { yPercent: 126, y: 0 }, { yPercent: 0, y: 0, duration: 1.05, ease: "expo.out", stagger: 0.045 }, 0.18);
+    }
+    tl.fromTo($$(".hero .cue"), { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.5");
+    tl.fromTo($$(".ghost"), { opacity: 0, scale: 1.04 }, {
+      opacity: parseFloat(getComputedStyle($(".ghost")).getPropertyValue("--ghost-o")) || 0.12,
+      scale: 1, duration: 1.6, ease: "power2.out"
+    }, 0.1);
+    tl.fromTo($$(".hero__grid-lines span"), { scaleY: 0, transformOrigin: "top center" },
+      { scaleY: 1, duration: 1.2, ease: "power3.out", stagger: 0.04 }, 0);
+
+    /* ---- the terminal prints itself ---- */
+    if (termOut) {
+      ScrollTrigger.create({
+        trigger: ".term",
+        start: "top 78%",
+        once: true,
+        onEnter: function () { scramble(termOut, outText, 1500, 0); }
+      });
+    }
+
+    /* ---- section reveals ---- */
+    $$("[data-reveal]").forEach(function (el) {
+      gsap.fromTo(el, { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.85, ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 88%", once: true } });
+    });
+
+    /* ---- the mirror axis draws itself between the two halves ---- */
+    var axisLine = $(".twin__axis-line");
+    if (axisLine) {
+      gsap.fromTo(axisLine, { scaleY: 0 }, {
+        scaleY: 1, duration: 1.4, ease: "power3.out",
+        scrollTrigger: { trigger: ".twin", start: "top 76%", once: true }
+      });
+    }
+
+    /* ---- section titles + notes ---- */
+    $$(".sec").forEach(function (sec) {
+      var t = $(".h2", sec);
+      if (!t) { return; }
+      var tw = $$(".w-i", t);
+      if (tw.length) {
+        gsap.fromTo(tw, { yPercent: 120, y: 0 }, {
+          yPercent: 0, y: 0, duration: 1, ease: "expo.out", stagger: 0.05,
+          scrollTrigger: { trigger: t, start: "top 88%", once: true }
+        });
+      }
+      var note = $(".sec__note", sec);
+      if (note) {
+        gsap.fromTo(note, { opacity: 0, y: 14 }, {
+          opacity: 1, y: 0, duration: 0.8, ease: "power3.out",
+          scrollTrigger: { trigger: t, start: "top 88%", once: true }
+        });
+      }
+    });
+
+    /* ---- matrix prints itself ---- */
+    var cells = $$("#matrix .cell");
+    if (cells.length) {
+      gsap.fromTo(cells, { opacity: 0, scale: 0.86 }, {
+        opacity: 1, scale: 1, duration: 0.6, ease: "power2.out", stagger: { each: 0.007, from: "start" },
+        scrollTrigger: { trigger: "#matrix", start: "top 82%", once: true }
+      });
+    }
+
+    /* ---- readout flip on change is handled in matrixHover ---- */
+
+    /* ---- 45 counts up ---- */
+    var sumOut = $("#sumOut");
+    if (sumOut) {
+      var counter = { v: 0 };
+      ScrollTrigger.create({
+        trigger: ".expr",
+        start: "top 82%",
+        once: true,
+        onEnter: function () {
+          gsap.to(counter, {
+            v: 45, duration: 1.6, ease: "power2.out", snap: { v: 1 },
+            onUpdate: function () { sumOut.textContent = String(Math.round(counter.v)); }
+          });
+        }
+      });
+    }
+
+    /* ---- parallax ---- */
+    $$("[data-speed]").forEach(function (el) {
+      var speed = parseFloat(el.getAttribute("data-speed")) || 0.1;
+      var amp = speed * 100;
+      gsap.fromTo(el, { yPercent: -amp }, {
+        yPercent: amp, ease: "none",
+        scrollTrigger: {
+          trigger: el.parentElement || el,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 0.7,
+          invalidateOnRefresh: true
+        }
+      });
+    });
+
+    /* ---- magnetic CTA ---- */
+    var cta = $("#cta");
+    if (cta && window.matchMedia && window.matchMedia("(pointer:fine)").matches) {
+      var qx = gsap.quickTo(cta, "x", { duration: 0.5, ease: "power3.out" });
+      var qy = gsap.quickTo(cta, "y", { duration: 0.5, ease: "power3.out" });
+      cta.addEventListener("pointermove", function (e) {
+        var r = cta.getBoundingClientRect();
+        qx((e.clientX - (r.left + r.width / 2)) * 0.22);
+        qy((e.clientY - (r.top + r.height / 2)) * 0.3);
+      });
+      cta.addEventListener("pointerleave", function () { qx(0); qy(0); });
+    }
+
+    /* ---- fonts settle → recalc ---- */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+    }
+    window.addEventListener("load", function () { ScrollTrigger.refresh(); });
+  }
+
+  /* ============================================================
+     AURA (decorative pointer light, fine pointers only)
+     ============================================================ */
+  function aura() {
+    var el = $("#aura");
+    if (!el || !window.matchMedia || !window.matchMedia("(pointer:fine)").matches || reduce) { return; }
+    var tx = window.innerWidth * 0.5, ty = window.innerHeight * 0.4;
+    var cx = tx, cy = ty, raf = null;
+    el.classList.add("on");
+    function loop() {
+      cx += (tx - cx) * 0.08;
+      cy += (ty - cy) * 0.08;
+      el.style.transform = "translate3d(" + cx.toFixed(1) + "px," + cy.toFixed(1) + "px,0)";
+      if (Math.abs(tx - cx) > 0.4 || Math.abs(ty - cy) > 0.4) { raf = requestAnimationFrame(loop); }
+      else { raf = null; }
+    }
+    window.addEventListener("pointermove", function (e) {
+      tx = e.clientX; ty = e.clientY;
+      if (raf === null) { raf = requestAnimationFrame(loop); }
+    }, { passive: true });
+  }
+
+  /* ============================================================
+     LENIS — inertia, wired into GSAP's ticker
+     ============================================================ */
+  function smooth() {
+    if (reduce || typeof window.Lenis !== "function") { return null; }
+    var lenis;
+    try {
+      lenis = new window.Lenis({
+        duration: 1.15,
+        easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); },
+        smoothWheel: true,
+        wheelMultiplier: 0.95,
+        touchMultiplier: 1.6,
+        gestureOrientation: "vertical"
+      });
+    } catch (e) { return null; }
+
+    if (hasGsap) {
+      lenis.on("scroll", ScrollTrigger.update);
+      gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
+      gsap.ticker.lagSmoothing(0);
+    } else {
+      var raf = function (time) { lenis.raf(time); requestAnimationFrame(raf); };
+      requestAnimationFrame(raf);
+    }
+    return lenis;
+  }
+
+  function anchors(lenis) {
+    $$('a[href^="#"]').forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        var id = a.getAttribute("href");
+        if (!id || id === "#") { return; }
+        var target = document.querySelector(id);
+        if (!target) { return; }
+        e.preventDefault();
+        if (lenis) {
+          lenis.scrollTo(target, { offset: -56, duration: 1.25 });
+        } else {
+          var y = target.getBoundingClientRect().top + (window.pageYOffset || 0) - 56;
+          window.scrollTo({ top: y, behavior: reduce ? "auto" : "smooth" });
+        }
+        if (history.replaceState) { history.replaceState(null, "", id); }
+      });
+    });
+  }
+
+  /* ============================================================
+     BOOT
+     ============================================================ */
+  function boot() {
+    try {
+      detectLibs();
+      injectProfile();
+      buildGhost();
+      buildMatrix();
+      buildTwin();
+      matrixHover();
+      lensToggle();
+      copyButton();
+      rail();
+      sectionLabel();
+      motion();
+      aura();
+      var lenis = smooth();
+      anchors(lenis);
+      if (hasGsap) { ScrollTrigger.refresh(); }
+    } catch (err) {
+      /* Never leave the page hidden because of a script problem. */
+      root.classList.remove("anim");
+      if (window.console && console.warn) { console.warn("Specimen init:", err); }
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
